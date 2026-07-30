@@ -364,7 +364,7 @@ function saveMastered() {
 
 function rebuildPool(){
   pool = WORDS.filter(item => !masteredSet.has(item.w));
-  runningHint.textContent = 낱말 사전 · ${pool.length}개 남음 (전체 ${WORDS.length}개);
+  runningHint.textContent = `낱말 사전 · ${pool.length}개 남음 (전체 ${WORDS.length}개)`;
   updateMasteredPanel();
   if(pool.length === 0){
     reelSection.style.display = 'none';
@@ -380,7 +380,7 @@ function rebuildPool(){
 
 function updateMasteredPanel(){
   const list = Array.from(masteredSet);
-  masteredCount.textContent = 외운 낱말 ${list.length}개;
+  masteredCount.textContent = `외운 낱말 ${list.length}개`;
   chipRow.innerHTML = '';
   masteredEmptyNote.style.display = list.length === 0 ? 'block' : 'none';
   list.forEach(w=>{
@@ -457,8 +457,8 @@ function spin(){
 
   const duration = 3.6;
   const blurClearDelay = duration - 0.5;
-  reelStrip.style.transition = transform ${duration}s cubic-bezier(.12,.85,.18,1), filter 0.5s ease ${blurClearDelay}s;
-  reelStrip.style.transform = translateY(${finalY}px);
+  reelStrip.style.transition = `transform ${duration}s cubic-bezier(.12,.85,.18,1), filter 0.5s ease ${blurClearDelay}s`;
+  reelStrip.style.transform = `translateY(${finalY}px)`;
   reelStrip.style.filter = 'blur(0px)';
 
   setTimeout(()=>{
@@ -473,7 +473,7 @@ function revealWord(index){
   currentWordIndex = index;
   const item = pool[index];
   wordText.textContent = item.w;
-  wordPos.textContent = 「${item.pos}」;
+  wordPos.textContent = `「${item.pos}」`;
   entryNo.textContent = index + 1;
   buildDefSpans(item.d);
   revealWrap.classList.add('show');
@@ -576,15 +576,15 @@ function showResults(target, typed, elapsedMs){
   const cpm = Math.round(correct / minutes);
   const acc = Math.round((correct/target.length)*1000)/10;
 
-  document.getElementById('rTime').textContent = ${seconds.toFixed(1)}초;
-  document.getElementById('rCorrect').textContent = ${correct}자;
-  document.getElementById('rWrong').textContent = ${wrong}자;
-  document.getElementById('rCpm').textContent = ${cpm}타;
-  document.getElementById('rAcc').textContent = ${acc}%;
+  document.getElementById('rTime').textContent = `${seconds.toFixed(1)}초`;
+  document.getElementById('rCorrect').textContent = `${correct}자`;
+  document.getElementById('rWrong').textContent = `${wrong}자`;
+  document.getElementById('rCpm').textContent = `${cpm}타`;
+  document.getElementById('rAcc').textContent = `${acc}%`;
   resultCard.classList.add('show');
 }
 
-masterBtn.addEventListener('click', async ()=>{
+masterBtn.addEventListener('click', ()=>{
   if(currentWordIndex === null) return;
   const item = pool[currentWordIndex];
   masteredSet.add(item.w);
