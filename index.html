@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>말갈피 — 사전 속 낯선 낱말을 굴리고, 옮겨 적다</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede0;
+    --paper-line:#cdbf9c;
+    --paper-dark:#e9e0cc;
+    --ink:#211c15;
+    --ink-soft:#5c5642;
+    --faint:#b6ab8b;
+    --red:#9c2b2b;
+    --brass:#8a6a34;
+    --brass-light:#c2a05a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--paper) 0 0),
+      repeating-linear-gradient(transparent 0 39px, rgba(138,106,52,0.08) 39px 40px);
+    color:var(--ink);
+    font-family:'Nanum Gothic Coding', monospace;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:44px 18px 90px;
+  }
+
+  .eyebrow{ font-size:11px; letter-spacing:0.35em; color:var(--brass); text-transform:uppercase; margin-bottom:10px; }
+  h1{ font-family:'Noto Serif KR', serif; font-weight:900; font-size:clamp(26px,5vw,40px); margin:0 0 6px; letter-spacing:-0.01em; }
+  .subtitle{ font-size:13.5px; color:var(--ink-soft); text-align:center; max-width:460px; line-height:1.75; margin-bottom:30px; }
+
+  .running-head{
+    display:flex; align-items:center; gap:10px;
+    font-size:11px; color:var(--brass); letter-spacing:0.06em;
+    margin-bottom:8px; width:100%; max-width:560px;
+  }
+  .running-head .rule{ flex:1; height:1px; background:var(--paper-line); }
+  .list-toggle{ background:none; border:none; color:var(--brass); font-size:11px; letter-spacing:0.06em; cursor:pointer; font-family:'Nanum Gothic Coding', monospace; white-space:nowrap; }
+  .list-toggle:hover{ color:var(--red); }
+
+  .mastered-panel{
+    display:none; width:100%; max-width:560px; margin-bottom:18px;
+    background:var(--paper-dark); border:1px solid var(--paper-line); padding:14px 16px;
+  }
+  .mastered-panel.show{ display:block; }
+  .mastered-panel-title{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .reset-all{ background:none; border:1px solid var(--red); color:var(--red); font-size:10.5px; padding:3px 8px; cursor:pointer; font-family:'Nanum Gothic Coding', monospace; }
+  .reset-all:hover{ background:var(--red); color:var(--paper); }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{ font-size:12px; background:var(--paper); border:1px solid var(--paper-line); padding:4px 8px; display:flex; align-items:center; gap:6px; }
+  .chip button{ background:none; border:none; color:var(--red); cursor:pointer; font-size:12px; padding:0; line-height:1; }
+  .empty-note{ font-size:12px; color:var(--ink-soft); }
+
+  /* ---------- SLOT REEL ---------- */
+  .reel-section{ display:flex; align-items:stretch; gap:16px; margin-bottom:22px; }
+  .reel-frame{
+    position:relative; width:min(84vw,300px); height:320px;
+    background:var(--paper-dark); border:3px solid var(--ink);
+    box-shadow: inset 0 0 0 6px var(--paper), inset 0 0 0 8px var(--brass), 0 14px 24px -12px rgba(33,28,21,0.4);
+    overflow:hidden;
+  }
+  .reel-window{
+    position:absolute; inset:8px; overflow:hidden;
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
+    mask-image:linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
+  }
+  .reel-strip{ display:flex; flex-direction:column; will-change:transform, filter; }
+  .reel-item{
+    height:64px; min-height:64px; display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Serif KR', serif; font-weight:700; font-size:22px; color:var(--ink-soft);
+    border-bottom:1px dashed var(--paper-line); letter-spacing:0.02em;
+  }
+  .reel-center-line{
+    position:absolute; left:8px; right:8px; top:calc(50% - 32px); height:64px;
+    border-top:2px solid var(--red); border-bottom:2px solid var(--red);
+    background:rgba(156,43,43,0.06); pointer-events:none;
+  }
+  .reel-center-line::before, .reel-center-line::after{
+    content:""; position:absolute; top:50%; transform:translateY(-50%); width:0; height:0;
+    border-top:7px solid transparent; border-bottom:7px solid transparent;
+  }
+  .reel-center-line::before{ left:-2px; border-left:9px solid var(--red); }
+  .reel-center-line::after{ right:-2px; border-right:9px solid var(--red); }
+
+  .lever-wrap{ display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:8px; }
+  .lever-btn{ background:none; border:none; cursor:pointer; padding:0; display:flex; flex-direction:column; align-items:center; }
+  .lever-track{
+    width:12px; height:150px; border-radius:8px;
+    background:linear-gradient(to bottom, #4a3717, var(--brass) 40%, #4a3717);
+    position:relative; box-shadow:inset 0 0 0 2px rgba(0,0,0,0.25);
+  }
+  .lever-knob{
+    width:30px; height:30px; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, var(--brass-light), var(--brass) 60%, #4a3717 100%);
+    position:absolute; left:50%; top:0; transform:translateX(-50%);
+    box-shadow:0 3px 6px rgba(0,0,0,0.35); transition: top .5s cubic-bezier(.34,1.6,.64,1);
+  }
+  .lever-btn.pulled .lever-knob{ top:120px; }
+  .lever-label{ margin-top:10px; font-size:10.5px; color:var(--brass); letter-spacing:0.15em; writing-mode:vertical-rl; }
+
+  .spin-btn{
+    font-family:'Noto Serif KR', serif; font-weight:700; font-size:15px; letter-spacing:0.05em;
+    color:var(--paper); background:var(--ink); border:none; padding:13px 30px; cursor:pointer;
+    transition:transform .15s ease, background .2s ease;
+  }
+  .spin-btn:hover:not(:disabled){ background:var(--red); transform:translateY(-1px); }
+  .spin-btn:disabled{ opacity:0.4; cursor:default; }
+
+  .empty-state{ display:none; flex-direction:column; align-items:center; gap:14px; margin:20px 0 8px; text-align:center; }
+  .empty-state.show{ display:flex; }
+  .empty-state p{ font-size:13.5px; color:var(--ink-soft); max-width:360px; line-height:1.7; }
+
+  /* ---------- DICTIONARY ENTRY ---------- */
+  .reveal-wrap{ margin-top:34px; width:100%; max-width:560px; display:none; flex-direction:column; align-items:center; }
+  .reveal-wrap.show{ display:flex; animation:fadeUp .5s ease both; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  .dict-card{
+    width:100%; background:var(--paper);
+    border-top:3px double var(--ink); border-bottom:3px double var(--ink);
+    padding:26px 28px 22px;
+  }
+  .dict-head{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .entry-no{ font-size:11px; color:var(--brass); border:1px solid var(--brass); padding:1px 6px; border-radius:50%; }
+  .headword{ font-family:'Noto Serif KR', serif; font-weight:900; font-size:30px; }
+  .pos{ font-size:13px; color:var(--ink-soft); }
+
+  .progress-track{ height:1px; background:var(--paper-line); position:relative; margin:0 0 22px; }
+  .progress-fill{ position:absolute; left:0; top:0; height:100%; background:var(--ink); width:0%; transition:width .15s ease; }
+  .progress-tick{ position:absolute; top:-6px; width:2px; height:13px; background:var(--ink); left:0%; transition:left .15s ease; }
+
+  .def-row{ display:flex; gap:8px; align-items:flex-start; }
+  .def-marker{ font-size:16px; color:var(--brass); flex-shrink:0; margin-top:2px; }
+  .def-blur{ font-family:'Noto Serif KR', serif; font-size:18px; line-height:1.9; }
+  .dchar{ color:var(--faint); font-weight:500; transition:color .12s ease; white-space:pre-wrap; }
+  .dchar.peek{ color:var(--brass); }
+  .dchar.correct{ color:var(--ink); font-weight:700; }
+  .dchar.wrong{ color:var(--red); font-weight:700; }
+
+  .type-input{
+    width:100%; margin-top:20px; border:none; border-bottom:2px solid var(--ink);
+    background:transparent; font-family:'Nanum Gothic Coding', monospace; font-size:15px;
+    padding:9px 4px; outline:none; color:var(--ink); caret-color:var(--red);
+  }
+  .type-input::placeholder{ color:var(--ink-soft); opacity:0.6; }
+  .type-input:focus{ border-bottom-color:var(--red); }
+
+  .result-card{ display:none; width:100%; max-width:400px; border:1px solid var(--ink); padding:20px 24px; margin-top:24px; background:var(--paper-dark); }
+  .result-card.show{ display:block; animation:fadeUp .5s ease both; }
+  .result-title{ font-family:'Noto Serif KR', serif; font-weight:700; font-size:15px; margin:0 0 12px; border-bottom:1px dashed var(--paper-line); padding-bottom:9px; }
+  .result-row{ display:flex; justify-content:space-between; font-size:13.5px; padding:4px 0; color:var(--ink-soft); }
+  .result-row b{ color:var(--ink); font-weight:700; }
+
+  .actions{ display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }
+  .ghost-btn{ font-family:'Nanum Gothic Coding', monospace; font-size:12.5px; color:var(--ink); background:transparent; border:1px solid var(--ink); padding:9px 16px; cursor:pointer; transition:background .2s ease, color .2s ease; }
+  .ghost-btn:hover{ background:var(--ink); color:var(--paper); }
+  .master-btn{ font-family:'Nanum Gothic Coding', monospace; font-size:12.5px; color:var(--paper); background:var(--brass); border:1px solid var(--brass); padding:9px 16px; cursor:pointer; transition:background .2s ease; }
+  .master-btn:hover{ background:#6f552a; }
+  .master-btn.done{ background:var(--ink-soft); border-color:var(--ink-soft); cursor:default; }
+
+  footer{ margin-top:56px; font-size:10.5px; color:var(--ink-soft); letter-spacing:0.1em; text-align:center; }
+
+  @media (max-width:420px){
+    .reel-frame{ width:76vw; }
+    .lever-wrap{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">literary vocabulary · dictionary reel</div>
+  <h1>말갈피</h1>
+  <p class="subtitle">사전 갈피 속 낯선 우리말들. 릴을 당겨 오늘의 표제어를 뽑고,<br>연하게 인쇄된 뜻풀이를 그 위에 진하게 덧써 보세요.</p>
+
+  <div class="running-head">
+    <span>ㄱ – ㅎ</span>
+    <span class="rule"></span>
+    <span id="runningHint">낱말 사전 · 0개 남음</span>
+    <span class="rule"></span>
+    <button class="list-toggle" id="listToggle">외운 낱말 목록 ▸</button>
+  </div>
+
+  <div class="mastered-panel" id="masteredPanel">
+    <div class="mastered-panel-title">
+      <span id="masteredCount">외운 낱말 0개</span>
+      <button class="reset-all" id="resetAllBtn">전체 초기화</button>
+    </div>
+    <div class="chip-row" id="chipRow"></div>
+    <div class="empty-note" id="masteredEmptyNote">아직 외운 낱말이 없어요. 결과 카드에서 "외웠어요"를 눌러보세요.</div>
+  </div>
+
+  <div class="reel-section" id="reelSection">
+    <div class="reel-frame">
+      <div class="reel-window">
+        <div class="reel-strip" id="reelStrip"></div>
+      </div>
+      <div class="reel-center-line"></div>
+    </div>
+    <div class="lever-wrap">
+      <button class="lever-btn" id="leverBtn" aria-label="레버 당기기">
+        <div class="lever-track"><div class="lever-knob"></div></div>
+      </button>
+      <span class="lever-label">PULL</span>
+    </div>
+  </div>
+
+  <button class="spin-btn" id="spinBtn">릴 당기기</button>
+
+  <div class="empty-state" id="emptyState">
+    <p>사전에 있는 낱말을 모두 외우셨네요. 릴에 다시 채우려면 목록을 초기화하세요.</p>
+    <button class="ghost-btn" id="emptyResetBtn">전체 초기화</button>
+  </div>
+
+  <div class="reveal-wrap" id="revealWrap">
+    <div class="dict-card" id="dictCard">
+      <div class="dict-head">
+        <span class="entry-no" id="entryNo">1</span>
+        <span class="headword" id="wordText">—</span>
+        <span class="pos" id="wordPos">「」</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div><div class="progress-tick" id="progressTick"></div></div>
+      <div class="def-row">
+        <span class="def-marker">①</span>
+        <div class="def-blur" id="defBlur"></div>
+      </div>
+    </div>
+    <input id="typeInput" class="type-input" placeholder="여기에 위 뜻풀이를 그대로 옮겨 적어보세요" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+    <div class="result-card" id="resultCard">
+      <div class="result-title">필사 기록</div>
+      <div class="result-row"><span>소요 시간</span><b id="rTime">-</b></div>
+      <div class="result-row"><span>정타 수</span><b id="rCorrect">-</b></div>
+      <div class="result-row"><span>오타 수</span><b id="rWrong">-</b></div>
+      <div class="result-row"><span>분당 타수 (CPM)</span><b id="rCpm">-</b></div>
+      <div class="result-row"><span>정확도</span><b id="rAcc">-</b></div>
+    </div>
+
+    <div class="actions">
+      <button class="ghost-btn" id="retryBtn">같은 낱말 다시</button>
+      <button class="ghost-btn" id="spinAgainBtn">다른 낱말 뽑기</button>
+      <button class="master-btn" id="masterBtn">이 낱말, 이제 외웠어요</button>
+    </div>
+  </div>
+
+  <footer>WORD × TYPING — 낯선 낱말을 손끝으로 익히는 법</footer>
+
+<script>
+const WORDS = [
+  {w:"곰살궂다", pos:"형용사", d:"태도나 성질이 부드럽고 다정스럽다."},
+  {w:"아둔하다", pos:"형용사", d:"이해력이 부족하고 어리석다."},
+  {w:"언죽번죽", pos:"부사", d:"조금도 부끄러워하지 않고 뻔뻔스럽게 구는 모양."},
+  {w:"옹골지다", pos:"형용사", d:"실속이 있게 속이 꽉 차 있다."},
+  {w:"새치름하다", pos:"형용사", d:"쌀쌀맞게 시치미를 떼는 태도가 있다."},
+  {w:"매지근하다", pos:"형용사", d:"더운 기운이 조금 있는 듯하다."},
+  {w:"아리송하다", pos:"형용사", d:"그런 것 같기도 하고 그렇지 않은 것 같기도 하여 분간하기 어렵다."},
+  {w:"을씨년스럽다", pos:"형용사", d:"보기에 날씨나 분위기 등이 스산하고 쓸쓸한 데가 있다."},
+  {w:"알량하다", pos:"형용사", d:"시시하고 보잘것없다."},
+  {w:"살갑다", pos:"형용사", d:"마음씨가 부드럽고 상냥하다."},
+  {w:"짐짓", pos:"부사", d:"마음으로는 그렇지 않으나 일부러 그렇게."},
+  {w:"시나브로", pos:"부사", d:"모르는 사이에 조금씩 조금씩."},
+  {w:"애면글면", pos:"부사", d:"몹시 힘에 겨운 일을 이루려고 갖은 애를 쓰는 모양."},
+  {w:"곰비임비", pos:"부사", d:"물건이 거듭 쌓이거나 일이 계속 일어남을 나타내는 말."},
+  {w:"부질없다", pos:"형용사", d:"대수롭지 아니하거나 쓸모가 없다."},
+  {w:"애달프다", pos:"형용사", d:"마음이 안타깝거나 쓰라리다."},
+  {w:"애틋하다", pos:"형용사", d:"정답고 알뜰한 맛이 있다."},
+  {w:"흐드러지다", pos:"형용사", d:"매우 탐스럽거나 한창 무르익어 있다."},
+  {w:"사무치다", pos:"동사", d:"깊이 스며들거나 멀리까지 미치다."},
+  {w:"오롯이", pos:"부사", d:"모자람이 없이 온전하게."},
+  {w:"아스라이", pos:"부사", d:"아득히 멀게."},
+  {w:"마뜩잖다", pos:"형용사", d:"마음에 들지 않다."},
+  {w:"그악스럽다", pos:"형용사", d:"사납고 모질다."},
+  {w:"두남두다", pos:"동사", d:"잘못을 두둔하다."},
+  {w:"샅", pos:"명사", d:"두 다리의 사이."},
+  {w:"넋두리", pos:"명사", d:"불만을 길게 늘어놓으며 하소연하는 말."},
+  {w:"어스름", pos:"명사", d:"조금 어둑한 상태. 또는 그런 때."},
+  {w:"애오라지", pos:"부사", d:"겨우, 오로지."},
+  {w:"낌새", pos:"명사", d:"일이 되어 가는 야릇한 분위기."},
+  {w:"부산하다", pos:"형용사", d:"급하게 서두르거나 시끄럽게 움직여 어수선하다."},
+  {w:"얄궂다", pos:"형용사", d:"야릇하고 짓궂다."},
+  {w:"능갈치다", pos:"동사", d:"얄밉도록 몹시 능청맞다."},
+  {w:"데면데면하다", pos:"형용사", d:"사람 사이가 친밀하지 않아 어색하다."},
+  {w:"무람없다", pos:"형용사", d:"예의를 지키지 않고 삼가는 태도가 없다."},
+  {w:"심드렁하다", pos:"형용사", d:"마음에 탐탁하지 않아 관심이 거의 없다."},
+  {w:"오지랖", pos:"명사", d:"웃옷이나 윗도리에 있는 앞자락."},
+  {w:"볼멘소리", pos:"명사", d:"서운하거나 성이 나서 퉁명스럽게 하는 말투."},
+  {w:"낭자하다", pos:"형용사", d:"여기저기 흩어져 어지럽다."},
+  {w:"지청구", pos:"명사", d:"남을 탓하고 원망하는 말."},
+  {w:"넉살", pos:"명사", d:"부끄러운 기색 없이 비위 좋게 구는 태도."},
+  {w:"함초롬하다", pos:"형용사", d:"젖거나 서려 있는 모습이 가지런하고 차분하다."},
+  {w:"나부대다", pos:"동사", d:"가만히 있지 못하고 철없이 몸을 자꾸 움직이다."},
+  {w:"시쁘다", pos:"형용사", d:"마음에 차지 아니하여 시들하다."},
+  {w:"다붓하다", pos:"형용사", d:"매우 가깝게 붙어 있다."},
+  {w:"얼비치다", pos:"동사", d:"물체의 그림자나 영상 등이 어렴풋하게 비치다."},
+  {w:"자늑자늑하다", pos:"형용사", d:"동작이 조용하며 가볍고 진득하게 부드럽다."}
+];
+
+const ITEM_H = 64;
+const LOOPS = 12;
+const CENTER_ROW = 2;
+
+const reelStrip = document.getElementById('reelStrip');
+const reelSection = document.getElementById('reelSection');
+const spinBtn = document.getElementById('spinBtn');
+const leverBtn = document.getElementById('leverBtn');
+const revealWrap = document.getElementById('revealWrap');
+const wordText = document.getElementById('wordText');
+const wordPos = document.getElementById('wordPos');
+const entryNo = document.getElementById('entryNo');
+const defBlur = document.getElementById('defBlur');
+const typeInput = document.getElementById('typeInput');
+const resultCard = document.getElementById('resultCard');
+const masterBtn = document.getElementById('masterBtn');
+const runningHint = document.getElementById('runningHint');
+const listToggle = document.getElementById('listToggle');
+const masteredPanel = document.getElementById('masteredPanel');
+const chipRow = document.getElementById('chipRow');
+const masteredCount = document.getElementById('masteredCount');
+const masteredEmptyNote = document.getElementById('masteredEmptyNote');
+const resetAllBtn = document.getElementById('resetAllBtn');
+const emptyState = document.getElementById('emptyState');
+const emptyResetBtn = document.getElementById('emptyResetBtn');
+const progressFill = document.getElementById('progressFill');
+const progressTick = document.getElementById('progressTick');
+
+let masteredSet = new Set();
+let pool = WORDS.slice();
+let spinning = false;
+let currentWordIndex = null;
+let startTime = null;
+let finished = false;
+let isComposing = false;
+const STORAGE_KEY = 'mastered-words-malgalpi';
+
+async function loadMastered(){
+  try{
+    if(window.storage){
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        const arr = JSON.parse(res.value);
+        masteredSet = new Set(arr);
+      }
+    }
+  }catch(e){ /* no stored value yet */ }
+  rebuildPool();
+}
+
+async function saveMastered(){
+  try{
+    if(window.storage){
+      await window.storage.set(STORAGE_KEY, JSON.stringify(Array.from(masteredSet)), false);
+    }
+  }catch(e){ console.error('save failed', e); }
+}
+
+function rebuildPool(){
+  pool = WORDS.filter(item => !masteredSet.has(item.w));
+  runningHint.textContent = 낱말 사전 · ${pool.length}개 남음 (전체 ${WORDS.length}개);
+  updateMasteredPanel();
+  if(pool.length === 0){
+    reelSection.style.display = 'none';
+    spinBtn.style.display = 'none';
+    emptyState.classList.add('show');
+  } else {
+    reelSection.style.display = 'flex';
+    spinBtn.style.display = 'inline-block';
+    emptyState.classList.remove('show');
+    buildStrip();
+  }
+}
+
+function updateMasteredPanel(){
+  const list = Array.from(masteredSet);
+  masteredCount.textContent = 외운 낱말 ${list.length}개;
+  chipRow.innerHTML = '';
+  masteredEmptyNote.style.display = list.length === 0 ? 'block' : 'none';
+  list.forEach(w=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    const span = document.createElement('span');
+    span.textContent = w;
+    const btn = document.createElement('button');
+    btn.textContent = '×';
+    btn.title = '다시 목록에 넣기';
+    btn.addEventListener('click', async ()=>{
+      masteredSet.delete(w);
+      await saveMastered();
+      rebuildPool();
+    });
+    chip.appendChild(span);
+    chip.appendChild(btn);
+    chipRow.appendChild(chip);
+  });
+}
+
+listToggle.addEventListener('click', ()=>{
+  masteredPanel.classList.toggle('show');
+});
+resetAllBtn.addEventListener('click', async ()=>{
+  masteredSet.clear();
+  await saveMastered();
+  rebuildPool();
+});
+emptyResetBtn.addEventListener('click', async ()=>{
+  masteredSet.clear();
+  await saveMastered();
+  rebuildPool();
+});
+
+function buildStrip(){
+  const frag = document.createDocumentFragment();
+  for(let l=0;l<LOOPS;l++){
+    pool.forEach(item=>{
+      const div = document.createElement('div');
+      div.className = 'reel-item';
+      div.textContent = item.w;
+      frag.appendChild(div);
+    });
+  }
+  reelStrip.innerHTML = '';
+  reelStrip.appendChild(frag);
+  reelStrip.style.transition = 'none';
+  reelStrip.style.transform = 'translateY(0px)';
+  reelStrip.style.filter = 'blur(0px)';
+}
+
+function spin(){
+  if(spinning || pool.length === 0) return;
+  spinning = true;
+  spinBtn.disabled = true;
+  leverBtn.disabled = true;
+  leverBtn.classList.add('pulled');
+  setTimeout(()=> leverBtn.classList.remove('pulled'), 500);
+
+  resultCard.classList.remove('show');
+  revealWrap.classList.remove('show');
+
+  const n = pool.length;
+  const targetIndex = Math.floor(Math.random()*n);
+  const landLoop = LOOPS - 3;
+  const targetGlobalIndex = landLoop*n + targetIndex;
+  const finalY = -(targetGlobalIndex - CENTER_ROW) * ITEM_H;
+
+  reelStrip.style.transition = 'none';
+  reelStrip.style.transform = 'translateY(0px)';
+  reelStrip.style.filter = 'blur(3.5px)';
+  void reelStrip.offsetHeight;
+
+  const duration = 3.6;
+  const blurClearDelay = duration - 0.5;
+  reelStrip.style.transition = transform ${duration}s cubic-bezier(.12,.85,.18,1), filter 0.5s ease ${blurClearDelay}s;
+  reelStrip.style.transform = translateY(${finalY}px);
+  reelStrip.style.filter = 'blur(0px)';
+
+  setTimeout(()=>{
+    revealWord(targetIndex);
+    spinning = false;
+    spinBtn.disabled = false;
+    leverBtn.disabled = false;
+  }, duration*1000 + 80);
+}
+
+function revealWord(index){
+  currentWordIndex = index;
+  const item = pool[index];
+  wordText.textContent = item.w;
+  wordPos.textContent = 「${item.pos}」;
+  entryNo.textContent = index + 1;
+  buildDefSpans(item.d);
+  revealWrap.classList.add('show');
+  resultCard.classList.remove('show');
+  finished = false;
+  startTime = null;
+  isComposing = false;
+  typeInput.value = '';
+  masterBtn.classList.remove('done');
+  masterBtn.textContent = '이 낱말, 이제 외웠어요';
+  masterBtn.disabled = false;
+  progressFill.style.width = '0%';
+  progressTick.style.left = '0%';
+  setTimeout(()=> typeInput.focus(), 250);
+}
+
+function buildDefSpans(target){
+  defBlur.innerHTML = '';
+  for(let i=0;i<target.length;i++){
+    const span = document.createElement('span');
+    span.className = 'dchar';
+    span.textContent = target[i];
+    span.dataset.idx = i;
+    defBlur.appendChild(span);
+  }
+}
+
+function renderReveal(typed, composingActive){
+  const item = pool[currentWordIndex];
+  const target = item.d;
+  const spans = defBlur.children;
+
+  let finalizedLen = typed.length;
+  let composingChar = null;
+  if(composingActive && typed.length > 0){
+    finalizedLen = typed.length - 1;
+    composingChar = typed[typed.length - 1];
+  }
+
+  for(let i=0;i<spans.length;i++){
+    const span = spans[i];
+    span.classList.remove('correct','wrong','peek');
+    if(i < finalizedLen){
+      if(typed[i] === target[i]){ span.classList.add('correct'); }
+      else{ span.classList.add('wrong'); }
+    } else if(i === finalizedLen && composingChar !== null){
+      span.classList.add('peek');
+    }
+  }
+
+  const pct = Math.min(100, (finalizedLen/target.length)*100);
+  progressFill.style.width = pct + '%';
+  progressTick.style.left = pct + '%';
+}
+
+function checkCompletion(typed){
+  const target = pool[currentWordIndex].d;
+  if(typed.length >= target.length && !finished){
+    finished = true;
+    const elapsedMs = performance.now() - (startTime || performance.now());
+    showResults(target, typed.slice(0, target.length), elapsedMs);
+    typeInput.blur();
+  }
+}
+
+typeInput.addEventListener('compositionstart', ()=>{ isComposing = true; });
+typeInput.addEventListener('compositionend', ()=>{
+  isComposing = false;
+  if(currentWordIndex === null) return;
+  const target = pool[currentWordIndex].d;
+  let typed = typeInput.value;
+  if(typed.length > target.length) typed = typed.slice(0, target.length);
+  renderReveal(typed, false);
+  checkCompletion(typed);
+});
+
+typeInput.addEventListener('input', ()=>{
+  if(currentWordIndex === null || finished) return;
+  if(startTime === null) startTime = performance.now();
+
+  const target = pool[currentWordIndex].d;
+  let typed = typeInput.value;
+  if(typed.length > target.length + 1) typed = typed.slice(0, target.length + 1);
+
+  renderReveal(typed, isComposing);
+  if(!isComposing){
+    const clipped = typed.length > target.length ? typed.slice(0, target.length) : typed;
+    checkCompletion(clipped);
+  }
+});
+
+function showResults(target, typed, elapsedMs){
+  let correct = 0;
+  for(let i=0;i<target.length;i++){
+    if(typed[i] === target[i]) correct++;
+  }
+  const wrong = target.length - correct;
+  const seconds = elapsedMs/1000;
+  const minutes = Math.max(seconds/60, 1/60);
+  const cpm = Math.round(correct / minutes);
+  const acc = Math.round((correct/target.length)*1000)/10;
+
+  document.getElementById('rTime').textContent = ${seconds.toFixed(1)}초;
+  document.getElementById('rCorrect').textContent = ${correct}자;
+  document.getElementById('rWrong').textContent = ${wrong}자;
+  document.getElementById('rCpm').textContent = ${cpm}타;
+  document.getElementById('rAcc').textContent = ${acc}%;
+  resultCard.classList.add('show');
+}
+
+masterBtn.addEventListener('click', async ()=>{
+  if(currentWordIndex === null) return;
+  const item = pool[currentWordIndex];
+  masteredSet.add(item.w);
+  await saveMastered();
+  masterBtn.classList.add('done');
+  masterBtn.textContent = '외운 낱말로 표시됨';
+  masterBtn.disabled = true;
+  rebuildPool();
+});
+
+spinBtn.addEventListener('click', spin);
+leverBtn.addEventListener('click', spin);
+document.getElementById('retryBtn').addEventListener('click', ()=>{
+  if(currentWordIndex !== null) revealWord(currentWordIndex);
+});
+document.getElementById('spinAgainBtn').addEventListener('click', spin);
+document.getElementById('dictCard').addEventListener('click', ()=> typeInput.focus());
+
+loadMastered();
+</script>
+</body>
+</html>
