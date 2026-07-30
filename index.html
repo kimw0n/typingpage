@@ -340,25 +340,26 @@ let finished = false;
 let isComposing = false;
 const STORAGE_KEY = 'mastered-words-malgalpi';
 
-async function loadMastered(){
-  try{
-    if(window.storage){
-      const res = await window.storage.get(STORAGE_KEY, false);
-      if(res && res.value){
-        const arr = JSON.parse(res.value);
-        masteredSet = new Set(arr);
-      }
+function loadMastered() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+
+  if (saved) {
+    try {
+      masteredSet = new Set(JSON.parse(saved));
+    } catch (e) {
+      console.error(e);
+      masteredSet = new Set();
     }
-  }catch(e){ /* no stored value yet */ }
+  }
+
   rebuildPool();
 }
 
-async function saveMastered(){
-  try{
-    if(window.storage){
-      await window.storage.set(STORAGE_KEY, JSON.stringify(Array.from(masteredSet)), false);
-    }
-  }catch(e){ console.error('save failed', e); }
+function saveMastered() {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify([...masteredSet])
+  );
 }
 
 function rebuildPool(){
@@ -390,9 +391,9 @@ function updateMasteredPanel(){
     const btn = document.createElement('button');
     btn.textContent = '×';
     btn.title = '다시 목록에 넣기';
-    btn.addEventListener('click', async ()=>{
+    btn.addEventListener('click', ()=>{
       masteredSet.delete(w);
-      await saveMastered();
+      saveMastered();
       rebuildPool();
     });
     chip.appendChild(span);
@@ -404,14 +405,14 @@ function updateMasteredPanel(){
 listToggle.addEventListener('click', ()=>{
   masteredPanel.classList.toggle('show');
 });
-resetAllBtn.addEventListener('click', async ()=>{
+resetAllBtn.addEventListener('click', ()=>{
   masteredSet.clear();
-  await saveMastered();
+  saveMastered();
   rebuildPool();
 });
-emptyResetBtn.addEventListener('click', async ()=>{
+emptyResetBtn.addEventListener('click',()=>{
   masteredSet.clear();
-  await saveMastered();
+  saveMastered();
   rebuildPool();
 });
 
@@ -587,7 +588,7 @@ masterBtn.addEventListener('click', async ()=>{
   if(currentWordIndex === null) return;
   const item = pool[currentWordIndex];
   masteredSet.add(item.w);
-  await saveMastered();
+  saveMastered();
   masterBtn.classList.add('done');
   masterBtn.textContent = '외운 낱말로 표시됨';
   masterBtn.disabled = true;
