@@ -533,10 +533,17 @@ function renderReveal(typed, composingActive){
 
 function checkCompletion(typed){
   const target = pool[currentWordIndex].d;
-  if(typed.length >= target.length && !finished){
+
+  const targetNormalized = normalizeText(target);
+  const typedNormalized = normalizeText(typed);
+
+  if(
+    typedNormalized.length >= targetNormalized.length &&
+    !finished
+  ){
     finished = true;
     const elapsedMs = performance.now() - (startTime || performance.now());
-    showResults(target, typed.slice(0, target.length), elapsedMs);
+    showResults(targetNormalized, typedNormalized, elapsedMs);
     typeInput.blur();
   }
 }
@@ -547,7 +554,7 @@ typeInput.addEventListener('compositionend', ()=>{
   if(currentWordIndex === null) return;
   const target = pool[currentWordIndex].d;
   let typed = typeInput.value;
-  if(typed.length > target.length) typed = typed.slice(0, target.length);
+  if(typed.length > target.length + 1) typed = typed.slice(0, target.length);
   renderReveal(typed, false);
   checkCompletion(typed);
 });
@@ -562,12 +569,16 @@ typeInput.addEventListener('input', ()=>{
 
   renderReveal(typed, isComposing);
   if(!isComposing){
-    const clipped = typed.length > target.length ? typed.slice(0, target.length) : typed;
+    const clipped = typed.length > target.length + 1 ? typed.slice(0, target.length) : typed;
     checkCompletion(clipped);
   }
 });
-
+function normalizeText(text){
+  return text.trim().replace(/[.。．]$/, "");
+}
 function showResults(target, typed, elapsedMs){
+  target = normalizeText(target);
+  typed = normalizeText(typed);
   let correct = 0;
   for(let i=0;i<target.length;i++){
     if(typed[i] === target[i]) correct++;
