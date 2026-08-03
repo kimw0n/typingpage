@@ -477,6 +477,9 @@ function revealWord(index){
   wordText.textContent = item.w;
   wordPos.textContent = `「${item.pos}」`;
   entryNo.textContent = index + 1;
+  function isPunctuation(ch){
+    return /[.,!?;:。．…'"'`()$begin:math:display$$end:math:display${}「」『』〈〉《》]/.test(ch);
+  }
   buildDefSpans(item.d);
   revealWrap.classList.add('show');
   resultCard.classList.remove('show');
@@ -494,11 +497,18 @@ function revealWord(index){
 
 function buildDefSpans(target){
   defBlur.innerHTML = '';
+
   for(let i=0;i<target.length;i++){
     const span = document.createElement('span');
     span.className = 'dchar';
     span.textContent = target[i];
     span.dataset.idx = i;
+
+    // 문장부호는 처음부터 진하게
+    if(isPunctuation(target[i])){
+        span.classList.add('correct');
+    }
+
     defBlur.appendChild(span);
   }
 }
@@ -518,6 +528,13 @@ function renderReveal(typed, composingActive){
   for(let i=0;i<spans.length;i++){
     const span = spans[i];
     span.classList.remove('correct','wrong','peek');
+    if(isPunctuation(target[i])){
+
+    span.classList.add('correct');
+
+    continue;
+
+    }
     if(i < finalizedLen){
       if(typed[i] === target[i]){ span.classList.add('correct'); }
       else{ span.classList.add('wrong'); }
@@ -574,7 +591,9 @@ typeInput.addEventListener('input', ()=>{
   }
 });
 function normalizeText(text){
-  return text.trim().replace(/[.。．]$/, "");
+    return text
+        .replace(/[.,!?;:。．…'"'`()\[\]{}「」『』〈〉《》]/g,"")
+        .trim();
 }
 function showResults(target, typed, elapsedMs){
   target = normalizeText(target);
