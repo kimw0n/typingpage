@@ -1,0 +1,5 @@
+User-agent: *
+
+Allow: /
+
+Sitemap: https://kimw0n.github.io/malgalpi/sitemap.xml
