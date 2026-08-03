@@ -524,25 +524,36 @@ function renderReveal(typed, composingActive){
     composingChar = typed[typed.length - 1];
   }
 
+  let typedIndex = 0;
+
   for(let i=0;i<spans.length;i++){
     const span = spans[i];
+
     span.classList.remove('correct','wrong','peek');
+
+    // 문장부호는 항상 정답 처리
     if(isPunctuation(target[i])){
-
-    span.classList.add('correct');
-
-    continue;
-
+        span.classList.add('correct');
+        continue;
     }
-    if(i < finalizedLen){
-      if(typed[i] === target[i]){ span.classList.add('correct'); }
-      else{ span.classList.add('wrong'); }
-    } else if(i === finalizedLen && composingChar !== null){
-      span.classList.add('peek');
+
+    if(typedIndex < finalizedLen){
+
+        if(typed[typedIndex] === target[i]){
+            span.classList.add('correct');
+        }else{
+            span.classList.add('wrong');
+        }
+
+        typedIndex++;
+    }
+    else if(typedIndex === finalizedLen && composingChar !== null){
+        span.classList.add('peek');
     }
   }
 
-  const pct = Math.min(100, (finalizedLen/target.length)*100);
+  const targetLen = normalizeText(target).length;
+  const pct = Math.min(100, (typedIndex/targetLen)*100);
   progressFill.style.width = pct + '%';
   progressTick.style.left = pct + '%';
 }
