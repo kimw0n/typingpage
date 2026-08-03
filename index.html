@@ -470,16 +470,14 @@ function spin(){
     leverBtn.disabled = false;
   }, duration*1000 + 80);
 }
-
-function revealWord(index){
+function isPunctuation(ch){
+    return /[.,!?;:。．…'"'`()/[.,!?;:。．…'"`()\[\]{}「」『』〈〉《》]/.test(ch);
+}
   currentWordIndex = index;
   const item = pool[index];
   wordText.textContent = item.w;
   wordPos.textContent = `「${item.pos}」`;
   entryNo.textContent = index + 1;
-  function isPunctuation(ch){
-    return /[.,!?;:。．…'"'`()$begin:math:display$$end:math:display${}「」『』〈〉《》]/.test(ch);
-  }
   buildDefSpans(item.d);
   revealWrap.classList.add('show');
   resultCard.classList.remove('show');
