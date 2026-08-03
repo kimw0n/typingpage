@@ -306,7 +306,7 @@ const WORDS = [
 ];
 
 const ITEM_H = 64;
-const LOOPS = 12;
+const LOOPS = 6;
 const CENTER_ROW = 2;
 
 const reelStrip = document.getElementById('reelStrip');
@@ -457,8 +457,8 @@ function spin(){
   reelStrip.style.filter = 'blur(3.5px)';
   void reelStrip.offsetHeight;
 
-  const duration = 3.6;
-  const blurClearDelay = duration - 0.5;
+  const duration = 1.8;
+  const blurClearDelay = duration - 0.25;
   reelStrip.style.transition = `transform ${duration}s cubic-bezier(.12,.85,.18,1), filter 0.5s ease ${blurClearDelay}s`;
   reelStrip.style.transform = `translateY(${finalY}px)`;
   reelStrip.style.filter = 'blur(0px)';
